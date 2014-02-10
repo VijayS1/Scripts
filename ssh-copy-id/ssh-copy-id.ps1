@@ -44,8 +44,8 @@ Param(
 Function Get-SSHCommands {
  Param($Target,$Password, $CommandArray, $PlinkAndPath, $ConnectOnceToAcceptHostKey = $true)
  
- $plinkoptions = "-ssh $Target"
- if ($Password) { $plinkoptions += " -pw $Password " }
+ $plinkoptions = "`-ssh $Target"
+ if ($Password) { $plinkoptions += " `-pw $Password " }
  
  #Build ssh Commands
  $CommandArray += "exit"
@@ -76,30 +76,10 @@ Function Get-SSHCommands {
  #$msg = Invoke-Expression $PlinkCommand
  #$msg
 }
-###
-Function Invoke-DOSCommands {
-    Param(
-        [Parameter(Position=0,Mandatory=$true)]
-        [String]$cmd,
-        [String]$tmpname = $(([string](Get-Random -Minimum 10000 -Maximum 99999999)) + ".cmd"),
-        [switch]$tmpdir = $true)
-    if ($tmpdir) {
-        $cmdpath = $(Join-Path -Path $env:TEMP -ChildPath $tmpname);
-    }
-    else {
-        $cmdpath = ".\" + $tmpname
-    }
-    Write-Debug "tmpfile: " + $cmdpath
-    Write-Debug "cmd: " + $cmd
-    echo $cmd | Out-File -FilePath $cmdpath -Encoding ascii;
-    & cmd.exe /c $cmdpath | Out-Null
-}
 ##################
 $ErrorActionPreference = "Stop" # "Continue" "SilentlyContinue" "Stop" "Inquire"
 $DebugPreference = "Continue"
-trap { #Stop on all errors
-    Write-Error "ERROR: $_"
-}
+trap { Write-Error "ERROR: $_" } #Stop on all errors
 
 $PlinkAndPath = '.\plink.exe'
  
@@ -113,6 +93,7 @@ $Commands += "cat >> .ssh/authorized_keys" #append the public key to file
 #Write-Debug $identity
 
 Try {
+    # test if files exist, trap will throw errors if they don't
     $tmp = Get-ItemProperty -Path $identity
     $tmp = Get-ItemProperty -Path $PlinkAndPath
     
@@ -122,16 +103,11 @@ Try {
      -CommandArray $Commands `
      -ConnectOnceToAcceptHostKey $ConnectOnceToAcceptHostKey
 
-     #Invoke-DOSCommands "Echo ""Hello World""", -tmpdir $false
      # pipe the public key to the plink session to get it appended in the right place
      $cmdline = "& type ""$identity"" | " + $cmdline
      #$cmdline = Get-Content $identity | " + $cmdline
      Write-Debug $cmdline
-     #Write-Debug Get-Variable cmdline | Get-Member
-     #Write-Debug Get-Members $cmdline
-     #Invoke-DOSCommands $cmdline, -tmpdir $false
      Invoke-Expression $cmdline
-     #& $cmdline
 }
 Catch {
     Write-Error "$($_.Exception.Message)"

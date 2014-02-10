@@ -1,7 +1,7 @@
 ssh-copy-id
 =======
 
-Various scripts duplicating ssh-copy-id behavior in windows. 
+Various scripts duplicating ssh-copy-id behavior in windows. All scripts depend on **plink.exe** which you can download from [here](http://the.earth.li/~sgtatham/putty/latest/x86/plink.exe)
 
 Attempted methods so far:
 

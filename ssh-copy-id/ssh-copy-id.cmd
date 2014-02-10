@@ -1,7 +1,5 @@
 :: from http://serverfault.com/questions/224810/is-there-an-equivalent-to-ssh-copy-id-for-windows
-:: expected parameters
-:: user@host.com password [id_ras.pub]
-::usage: ssh-copy-id test@example.com password [identity file]
+::usage: ssh-copy-id test@example.com password [id_ras.pub]
 
 ::@echo off
 IF "%~3"=="" GOTO setdefault
