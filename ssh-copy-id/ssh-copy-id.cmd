@@ -5,10 +5,10 @@
 
 ::@echo off
 IF "%~3"=="" GOTO setdefault
-set id=%3
+set /p id=<%3
 GOTO checkparams
 :setdefault
-set id=id_rsa.pub
+set /p id=<id_rsa.pub
 :checkparams
 IF "%~1"=="" GOTO promptp
 IF "%~2"=="" GOTO promptp2
@@ -17,7 +17,7 @@ IF "%~2"=="" GOTO promptp2
 :: To accept the signature the first time
 echo y | plink.exe %1 -pw %2 "exit"
 :: now to actually copy the key
-echo type %id% | plink.exe %1 -pw %2 "umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys"
+echo %id% | plink.exe %1 -pw %2 "umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys"
 GOTO end
 
 :promptp
