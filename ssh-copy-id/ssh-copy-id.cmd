@@ -21,10 +21,10 @@ echo %id% | plink.exe %1 -pw %2 "umask 077; test -d .ssh || mkdir .ssh ; cat >> 
 GOTO end
 
 :promptp
-set /p 1="Enter username@remotehost.com: "
+set /p user= "Enter username@remotehost.com: "
 :promptp2
-set /p 2="Enter password: "
-GOTO exec
-
+set /p pw= "Enter password: "
+echo y | plink.exe %user% -pw %pw% "exit"
+echo %id% | plink.exe %user% -pw %pw% "umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys"
 :end
 pause
