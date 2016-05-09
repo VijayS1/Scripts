@@ -12,6 +12,7 @@ It currently supports the following options:
  * It works in AND mode, each selection is with all the other selections. ie. selecting No Name &   No Email, will find contacts which don't have both! 
  * To use in OR mode, please choose one option at a time and click apply. Since it ignores selected items, any new contacts matching the criteria will get added to the selection. 
 
+## How to Install
 
 Copy and paste the following as a new bookmarlet in your browser
 ```
@@ -29,5 +30,5 @@ void(0);
 
 Alternatively copy & paste the contents of the .js script in the console of your contacts page. This will show the menu below the contacts menu on the left and you can use it. 
 
-
+## TO DO
 Make the interface more attractive. Use same style as google, maybe make it a dropdown?
