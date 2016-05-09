@@ -1,0 +1,141 @@
+Mon May 09, 2016 09:22:03 PM
+
+$("tr.K9ln3e:visible").each(function(index) {
+	if ($(this).children(":gt(3)").text() == "") {	//find contacts with no text in email,phone,address
+		console.log( index + ": " + $( this ).text() );
+		$(this).children()[1].click(); //select these contacts
+	}
+});
+
+$("tr.K9ln3e:visible:first").children()
+
+$("tr.K9ln3e:visible:first").children()[0]
+$("tr.K9ln3e:visible:first").children()[1] 
+
+[0] idplaceholder
+[1] checkbox
+$("tr.K9ln3e:visible:first").children()[1].click()
+
+[2] star/favorite
+[3] name
+[4] email
+[5] phone number
+[6] address
+
+my.contacts.field = {
+	ID : 0,
+	CHECKBOX : 1,
+	STAR : 2,
+	NAME : 3,
+	EMAIL : 4,
+	PHONE : 5,
+	ADDRESS : 6
+};
+
+
+class K91n3e is for unselected contact
+class NbVfBb is for selected contact
+
+$("tr.K9ln3e:visible:first").children(":gt(3)").text()
+get text for everthing after name
+--
+function simulateClick(elem) {
+    var rect = elem.getBoundingClientRect(), // holds all position- and size-properties of element
+        topEnter = rect.top,
+        leftEnter = rect.left, // coordinates of elements topLeft corner
+        topMid = topEnter + rect.height / 2,
+        leftMid = topEnter + rect.width / 2, // coordinates of elements center
+        ddelay = (rect.height + rect.width) * 2, // delay depends on elements size
+        ducInit = {bubbles: true, clientX: leftMid, clientY: topMid}, // create init object
+        // set up the four events, the first with enter-coordinates,
+        mover = new MouseEvent('mouseover', {bubbles: true, clientX: leftEnter, clientY: topEnter}),
+        // the other with center-coordinates
+        mdown = new MouseEvent('mousedown', ducInit),
+        mup = new MouseEvent('mouseup', ducInit),
+        mclick = new MouseEvent('click', ducInit);
+    // trigger mouseover = enter element at toLeft corner
+    elem.dispatchEvent(mover);
+    // trigger mousedown  with delay to simulate move-time to center
+    window.setTimeout(function() {elem.dispatchEvent(mdown)}, ddelay);
+    // trigger mouseup and click with a bit longer delay
+    // to simulate time between pressing/releasing the button
+    window.setTimeout(function() {
+        elem.dispatchEvent(mup); elem.dispatchEvent(mclick);
+    }, ddelay * 1.2);
+}
+
+simulateClick($("div#\\:uo")[0]);
+
+---
+
+Select all contacts with:
+[ ] no name
+[ ] no email
+[ ] no phone
+[ ] no address
+Apply
+
+//isEmpty(rec1, my.contacts.field.NAME)
+//isEmpty(rec1, my.contacts.field.EMAIL)
+//isEmpty(rec1, my.contacts.field.PHONE)
+//isEmpty(rec1, my.contacts.field.ADDRESS)
+
+x Contacts selected.
+
+insert selection button after
+
+$("div#\\:ul")
+
+choices should be as above, and click apply
+--
+my.contacts.field = {
+	ID : 0,
+	CHECKBOX : 1,
+	STAR : 2,
+	NAME : 3,
+	EMAIL : 4,
+	PHONE : 5,
+	ADDRESS : 6
+};
+
+function isEmpty(contact, FieldNum) { 
+	return 	contact.children(":eq("+FieldNum+")").text() == "");
+}
+
+function selectContact(contact) {
+	return contact.children()[1].click();
+}
+
+//isEmpty(rec1, my.contacts.field.NAME)
+//isEmpty(rec1, my.contacts.field.EMAIL)
+//isEmpty(rec1, my.contacts.field.PHONE)
+//isEmpty(rec1, my.contacts.field.ADDRESS)
+
+function selectBlanks() {
+$("tr.K9ln3e:visible").each(function(index) {
+rec = $(this);
+if (isEmpty(rec, my.contacts.field.EMAIL) &&
+	isEmpty(rec, my.contacts.field.PHONE) &&
+	isEmpty(rec, my.contacts.field.ADDRESS)){	//find contacts with no text in email,phone,address
+		console.log( index + ": " + rec.text() );
+		selectContact(rec);
+	}
+});
+}
+
+function addSelectionButton() {
+}
+
+function doSelection(optionsselected) {
+	$("tr.K9ln3e:visible").each(function(index) {
+		rec = $(this);
+		var ans = true;
+		for each (option in optionsselected) {
+			ans &= isEmpty(rec, option);
+		}
+		if (ans) {
+			console.log( index + ": " + rec.text() );
+			selectContact(rec);
+		}
+	});
+}
