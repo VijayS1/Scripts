@@ -25,7 +25,7 @@ var contactFields = {
 	EMAIL : 4,
 	PHONE : 5,
 	ADDRESS : 6
-};
+}
 
 function isEmpty(contact, FieldNum) { 
 	return 	(contact.children(":eq("+FieldNum+")").text() == "");
