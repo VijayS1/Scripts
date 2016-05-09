@@ -40,28 +40,15 @@ function selectContact(contact) {
 }
 
 function selectNameOnly() {
-	// var num = 0;
-	// $("tr.K9ln3e:visible").each(function(index) {
-	// rec = $(this);
-	// if (isEmpty(rec, contactFields.EMAIL) &&
-		// isEmpty(rec, contactFields.PHONE) &&
-		// isEmpty(rec, contactFields.ADDRESS)){	//find contacts with no text in email,phone,address
-			// console.log( index + ": " + rec.text() );
-			// selectContact(rec);
-			// num++;
-		// }
-	// });
-	// console.log(num + " contacts selected");
 	doSelection([contactFields.EMAIL,contactFields.PHONE,contactFields.ADDRESS]);
 }
 
 function doSelection(optionsSelected) {
 	var num = 0;
-	console.log("starting");
+	console.log("starting with options:" + optionsSelected);
 	$("tr.K9ln3e:visible").each(function(index) {
 		rec = $(this);
 		var ans = true;
-//		foreach (option in optionsselected) {
 		optionsSelected.forEach(function(option){
 			ans &= isEmpty(rec, option);
 		});
@@ -72,37 +59,35 @@ function doSelection(optionsSelected) {
 		}
 	});
 	console.log(num + " contacts selected");
+	return (num + " contacts selected");
 }
 
-function dumpInArray(){
-  var arr = [];
-  $('.modal-choices input[type="checkbox"]:checked').each(function(){
-    arr.push($(this).val());
-  });
-  return arr; 
-}
-
-function selectButtonHandler() {
-    var arr = [];
-    $('.modal-choices input[type="checkbox"]:checked').each(function(){
-      arr.push($(this).val());
-    });
-     $('#result').html(arr.join(" | "));
-    doSelection(arr);
-}
+// function dumpInArray(){
+  // var arr = [];
+  // $('.modal-choices input[type="checkbox"]:checked').each(function(){
+    // arr.push($(this).val());
+  // });
+  // return arr; 
+// }
 
 function addSelectionButton() {
 	var selectionButton = `<div class="modal-choices">
-<div><input type="checkbox" id="chk_1" name="chk_1" value="No Name"/><label for="chk_1">No Name</label></div>
-<div><input type="checkbox" id="chk_2" name="chk_2" value="No Email"/><label for="chk_2">No Email</label></div>
-<div><input type="checkbox" id="chk_3" name="chk_3" value="No Phone"/><label for="chk_3">No Phone</label></div>
-<div><input type="checkbox" id="chk_4" name="chk_4" value="No Address"/><label for="chk_4">No Address</label></div>
-<div><a href="#" id="applySelection" class="button select-roles" onclick="selectButtonHandler" role="button">Apply</a></div>
+<div><input type="checkbox" id="chk_1" name="chk_1" value="3"/><label for="chk_1">No Name</label></div>
+<div><input type="checkbox" id="chk_2" name="chk_2" value="4"/><label for="chk_2">No Email</label></div>
+<div><input type="checkbox" id="chk_3" name="chk_3" value="5"/><label for="chk_3">No Phone</label></div>
+<div><input type="checkbox" id="chk_4" name="chk_4" value="6"/><label for="chk_4">No Address</label></div>
+<div><a href="#" id="applySelection" class="button select-roles" role="button">Apply</a></div>
 <div id="result"></div>
 </div>`;
 	//$("div#\\:ul").parent().append(selectionButton);
-	$("div.gfqccc").append(selectionButton);
-	$('#applySelection').click(selectButtonHandler);
+	$("div#\\:ss").append(selectionButton);
+	$('#applySelection').click(function selectButtonHandler() {
+		var arr = [];
+		$('.modal-choices input[type="checkbox"]:checked').each(function(){
+		  arr.push($(this).val());
+		});
+		 $('#result').html(doSelection(arr));
+	});
 }
 
 
@@ -137,3 +122,5 @@ function simulateClick(elem) {
     console.log("starting bookmarklet");
 	addSelectionButton();
   }
+//)();
+void(0);
