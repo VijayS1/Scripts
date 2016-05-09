@@ -57,6 +57,7 @@ function selectNameOnly() {
 
 function doSelection(optionsSelected) {
 	var num = 0;
+	console.log("starting");
 	$("tr.K9ln3e:visible").each(function(index) {
 		rec = $(this);
 		var ans = true;
@@ -73,14 +74,37 @@ function doSelection(optionsSelected) {
 	console.log(num + " contacts selected");
 }
 
-function addSelectionButton() {
-	var selectionButton="";
+function dumpInArray(){
+  var arr = [];
+  $('.modal-choices input[type="checkbox"]:checked').each(function(){
+    arr.push($(this).val());
+  });
+  return arr; 
 }
 
-  function initMyBookmarklet() {
-    console.log("starting bookmarklet");
-    )();
-  }
+function selectButtonHandler() {
+    var arr = [];
+    $('.modal-choices input[type="checkbox"]:checked').each(function(){
+      arr.push($(this).val());
+    });
+     $('#result').html(arr.join(" | "));
+    doSelection(arr);
+}
+
+function addSelectionButton() {
+	var selectionButton = `<div class="modal-choices">
+<div><input type="checkbox" id="chk_1" name="chk_1" value="No Name"/><label for="chk_1">No Name</label></div>
+<div><input type="checkbox" id="chk_2" name="chk_2" value="No Email"/><label for="chk_2">No Email</label></div>
+<div><input type="checkbox" id="chk_3" name="chk_3" value="No Phone"/><label for="chk_3">No Phone</label></div>
+<div><input type="checkbox" id="chk_4" name="chk_4" value="No Address"/><label for="chk_4">No Address</label></div>
+<div><a href="#" id="applySelection" class="button select-roles" onclick="selectButtonHandler" role="button">Apply</a></div>
+<div id="result"></div>
+</div>`;
+	//$("div#\\:ul").parent().append(selectionButton);
+	$("div.gfqccc").append(selectionButton);
+	$('#applySelection').click(selectButtonHandler);
+}
+
 
 //-------- from http://stackoverflow.com/a/26142061/107537
 function simulateClick(elem) {
@@ -109,3 +133,7 @@ function simulateClick(elem) {
 }
 
 //simulateClick($("div#\\:uo")[0]); //Add to Groups Button
+  function initMyBookmarklet() {
+    console.log("starting bookmarklet");
+	addSelectionButton();
+  }
