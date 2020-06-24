@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, time
+import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, datetime
 
 SUFFIXES = {1000: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
@@ -38,7 +38,7 @@ def zfAddNullFile(zf, arcname, date_time, extattr=0):
   zinfo.header_offset = zf.fp.tell()    # Start of header bytes
   zf._writecheck(zinfo)
   zf._didModify = True
-  zinfo.CRC = CRC = zlib.crc32("")
+  zinfo.CRC = zlib.crc32(b"")
   zinfo.compress_size = 0
   zinfo.file_size = 0
   zf.fp.write(zinfo.FileHeader())
@@ -48,15 +48,14 @@ def zfAddNullFile(zf, arcname, date_time, extattr=0):
 def printFilename(f, msg=None):
   if not options.quiet:
     if msg:
-      print msg,
+      print(msg, end=' ')
     
     try:
-      print f
+      print(f)
     except:
-      print f.encode("charmap", "replace")
+      print(f.encode("charmap", "replace"))
 
 if __name__ == '__main__':
-  start_time = time.clock()
   usage = """%prog [options] <target-zip> <source-dir> [<source-dir...>]
     -m, --exclude_mask, Exclude mask
     -q, --quite, Quiet mode
@@ -96,21 +95,21 @@ if __name__ == '__main__':
       intermediate_zip = target_zip
     for source in args[1:]:
       try:
-        source_dir=source.decode("latin-1")
+        source_dir=source#.decode("latin-1")
       except:
-        print "Exception while trying to process directory: %s" % (source)
+        print("Exception while trying to process directory: %s" % (source))
     if options.debug:
-      print target_zip
-      print intermediate_zip
-      print source_dir
+      print(target_zip)
+      print(intermediate_zip)
+      print(source_dir)
 
   # EXTRACT 
   if options.extract:
     """ Extracts the zipfile and all zipfiles in it larger than 0 bytes """
     try:
       zf=zipfile.ZipFile(target_zip, "r")
-    except IOError, e:
-      print e
+    except IOError as e:
+      print(e)
       sys.exit(1)
 
     for info in zf.infolist():
@@ -122,7 +121,7 @@ if __name__ == '__main__':
         os.remove(info.filename)
     zf.close()
 
-    print "Files extracted successfuly to %s" % (source_dir)
+    print("Files extracted successfuly to %s" % (source_dir))
     # for files in os.listdir(source_dir):
     #   if files.endswith(".zip"):
     #     zf=zipfile.ZipFile(files, "r")
@@ -137,17 +136,17 @@ if __name__ == '__main__':
 
   for sourceDir in args[1:]:
     try:
-      sourceDir=sourceDir.decode("latin-1")
-    except:
-      print sourceDir
-      print "Exception while trying to process directory"
+      sourceDir=sourceDir#.decode("latin-1")
+    except Exception as e:
+      print("Exception while trying to process directory: " + sourceDir)
+      print(str(e))
     for dp, dn, fn in os.walk(sourceDir):
       if fn:
         for f in fn:
-          #f=os.path.join(dp, f)
+          f=os.path.join(dp, f)
           # to overcome path limitations in windows: see https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath
           # or https://stackoverflow.com/questions/45041836/windowserror-error-3-the-system-cannot-find-the-path-specified-when-path-too
-          f="\\\\?\\" + os.path.join(dp, f)
+          #f="\\\\?\\" + os.path.join(dp, f)
           ok=True
           for xmask in options.exclude_mask:
             if fnmatch.fnmatch(f, xmask):
@@ -155,16 +154,21 @@ if __name__ == '__main__':
               break
           if ok:
             try:
+              #workaround for filepaths greather than 260 characters see comment above
+              if len(f) >= 260:
+                f = "\\\\?\\" + f
               mtime=time.localtime(os.stat(f).st_mtime)
             except ValueError:
-              print "Error: Modified time out of range."
+              print("Error: Modified time out of range.")
               printFilename(f)
-              print os.stat(f).st_mtime
-              mtime=time.localtime(0) #set time to unix epoch 0 = 'Thu Jan 01 07:00:00 1970'
-            except WindowsError:
-              print "Error: Can't find file due to windows limitations."
-              printFilename(f)
-              mtime=time.localtime(0) #set time to unix epoch 0 = 'Thu Jan 01 07:00:00 1970'
+              print(os.stat(f).st_mtime)
+            except WindowsError as e:
+              print("Error: Can't find file due to windows limitations.")
+              print(str(e))
+              #printFilename(f)
+            finally:
+              if mtime.tm_year < 1980: # to fix the time error in zipfiles, that timestamps can't be before 1980
+                mtime.tm_year=1980
               
             zfAddNullFile(zf, f, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec))
             filecount += 1
@@ -172,7 +176,7 @@ if __name__ == '__main__':
         mtime=time.localtime(os.stat(dp).st_mtime)
         #printFilename(dp, "(empty directory)")
         zfAddNullFile(zf, dp, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec), 16)
-  msg = "Zip file created successfuly in %.2f seconds with %d files." % (time.clock()-start_time, filecount)  
+  msg = b"Zip file created successfuly in %.2f seconds with %d files." % (time.process_time(), filecount)  
   zf.comment = msg
   zf.close()
 
@@ -185,6 +189,6 @@ if __name__ == '__main__':
     os.remove(intermediate_zip)
     #os.rename(tf.name,target_zip)
   
-  print msg
-  print target_zip + " " + humanReadableByteCount(os.stat(target_zip).st_size)
+  print(target_zip + " " + humanReadableByteCount(os.stat(target_zip).st_size))
+  print(msg)
   
