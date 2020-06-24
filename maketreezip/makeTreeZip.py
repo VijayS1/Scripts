@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, datetime
+from progress.spinner import Spinner
 
 SUFFIXES = {1000: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
@@ -133,6 +134,7 @@ if __name__ == '__main__':
   # MAKE TREE ZIP
   zf=zipfile.ZipFile(intermediate_zip, "w")
   filecount = 0
+  spinner = Spinner("Processing ")
 
   for sourceDir in args[1:]:
     try:
@@ -167,16 +169,23 @@ if __name__ == '__main__':
               print(str(e))
               #printFilename(f)
             finally:
-              if mtime.tm_year < 1980: # to fix the time error in zipfiles, that timestamps can't be before 1980
-                mtime.tm_year=1980
+              if mtime.tm_year < 1980: # to fix the time error in zipfiles, that timestamps can't be before 1980, mabye this bug is fixed?
+                print("")
+                print("File: " + f)
+                print("Got incorrect modified date: " + time.strftime("%Y-%m-%d %H:%M:%S", mtime))
+                mtime = datetime.datetime.fromisoformat("1980-01-01").timetuple()
+                print("Using default: " + time.strftime("%Y-%m-%d %H:%M:%S", mtime))
               
             zfAddNullFile(zf, f, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec))
             filecount += 1
+            if (filecount % 100) == 0:
+              spinner.next()
       elif not options.omit_empty:
         mtime=time.localtime(os.stat(dp).st_mtime)
         #printFilename(dp, "(empty directory)")
         zfAddNullFile(zf, dp, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec), 16)
   msg = b"Zip file created successfuly in %.2f seconds with %d files." % (time.process_time(), filecount)  
+  #spinner.finish()
   zf.comment = msg
   zf.close()
 
@@ -189,6 +198,31 @@ if __name__ == '__main__':
     os.remove(intermediate_zip)
     #os.rename(tf.name,target_zip)
   
+  print("Finished.")
   print(target_zip + " " + humanReadableByteCount(os.stat(target_zip).st_size))
-  print(msg)
-  
+  print(msg.decode())
+  """ 
+  py2exe no longer works after python 3.4 
+  have to use pyinstaller instead. 
+
+The solution I used was to use PyInstaller as an alternative because Py2Exe stopped development at python 3.4 and will not work with newer versions.
+
+C:/>pip install pyinstaller
+C:/>pyinstaller yourprogram.py
+
+This will create a subdirectory called dist with the yourprogram.exe contained in a folder called yourprogram.
+
+Use -F to place all generated files in one executable file.
+
+C:/>pyinstaller -F yourprogram
+
+Use can use -w to if you want to remove console display for GUI's.
+
+C:/>pyinstaller -w yourprogram.py
+
+Putting it all togerther.
+
+C:/>pyinstaller -w -F yourprogram.py
+
+Read more about PyInstaller here.
+   """
