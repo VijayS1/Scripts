@@ -145,7 +145,8 @@ if __name__ == '__main__':
       if fn:
         for f in fn:
           #f=os.path.join(dp, f)
-          # to overcome path limitations in windows
+          # to overcome path limitations in windows: see https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath
+          # or https://stackoverflow.com/questions/45041836/windowserror-error-3-the-system-cannot-find-the-path-specified-when-path-too
           f="\\\\?\\" + os.path.join(dp, f)
           ok=True
           for xmask in options.exclude_mask:
