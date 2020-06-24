@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, datetime
-from progress.spinner import Spinner
 
 SUFFIXES = {1000: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
@@ -134,11 +133,11 @@ if __name__ == '__main__':
   # MAKE TREE ZIP
   zf=zipfile.ZipFile(intermediate_zip, "w")
   filecount = 0
-  spinner = Spinner("Processing ")
 
   for sourceDir in args[1:]:
     try:
       sourceDir=sourceDir#.decode("latin-1")
+      print("Processing directory: " + sourceDir)
     except Exception as e:
       print("Exception while trying to process directory: " + sourceDir)
       print(str(e))
@@ -178,14 +177,14 @@ if __name__ == '__main__':
               
             zfAddNullFile(zf, f, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec))
             filecount += 1
-            if (filecount % 100) == 0:
-              spinner.next()
+            if (filecount % 1000) == 0:
+              sys.stdout.write("\r%d" % filecount)
+              #sys.stdout.flush()
       elif not options.omit_empty:
         mtime=time.localtime(os.stat(dp).st_mtime)
         #printFilename(dp, "(empty directory)")
         zfAddNullFile(zf, dp, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec), 16)
   msg = b"Zip file created successfuly in %.2f seconds with %d files." % (time.process_time(), filecount)  
-  #spinner.finish()
   zf.comment = msg
   zf.close()
 
@@ -198,7 +197,7 @@ if __name__ == '__main__':
     os.remove(intermediate_zip)
     #os.rename(tf.name,target_zip)
   
-  print("Finished.")
+  print("\nFinished.")
   print(target_zip + " " + humanReadableByteCount(os.stat(target_zip).st_size))
   print(msg.decode())
   """ 
@@ -225,4 +224,12 @@ Putting it all togerther.
 C:/>pyinstaller -w -F yourprogram.py
 
 Read more about PyInstaller here.
+
+
+
+Summarizing for Python3 former contribs: 
+def update_progress(progress):
+  print("\rProgress: [{0:50s}] {1:.1f}%".format('#' * int(progress * 50), progress*100), end="", flush=True), 
+where workdone is a float between 0 and 1, e.g., workdone = parsed_dirs/total_dirs ??? khyox Dec 11 '14 at 12:35
+
    """
