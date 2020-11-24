@@ -145,6 +145,7 @@ if __name__ == '__main__':
       if fn:
         for f in fn:
           f=os.path.join(dp, f)
+          #f=f.encode('utf-8','surrogateescape').decode('utf-8','replace') #workaround for non printable characters
           # to overcome path limitations in windows: see https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath
           # or https://stackoverflow.com/questions/45041836/windowserror-error-3-the-system-cannot-find-the-path-specified-when-path-too
           #f="\\\\?\\" + os.path.join(dp, f)
@@ -156,13 +157,17 @@ if __name__ == '__main__':
           if ok:
             try:
               #workaround for filepaths greather than 260 characters see comment above
-              if len(f) >= 260:
+              #have to check if os is windows
+              if len(f) >= 260 and os.name == 'nt':
                 f = "\\\\?\\" + f
               mtime=time.localtime(os.stat(f).st_mtime)
             except ValueError:
               print("Error: Modified time out of range.")
               printFilename(f)
               print(os.stat(f).st_mtime)
+            except FileNotFoundError as e:
+              print("File not found, probably due to illegal filename characters")
+              print(str(e))              
             except WindowsError as e:
               print("Error: Can't find file due to windows limitations.")
               print(str(e))
