@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, datetime
+import unicodedata
 
 SUFFIXES = {1000: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
@@ -44,7 +45,13 @@ def zfAddNullFile(zf, arcname, date_time, extattr=0):
   zf.fp.write(zinfo.FileHeader())
   zf.filelist.append(zinfo)
   zf.NameToInfo[zinfo.filename] = zinfo
-  
+
+def is_unicode_filename(filename):
+  return any(ord(c) >= 0x7F for c in filename)
+
+def cleanFilename(f):
+  return unicodedata.normalize('NFKD',f).encode('ASCII','ignore').decode()
+
 def printFilename(f, msg=None):
   if not options.quiet:
     if msg:
