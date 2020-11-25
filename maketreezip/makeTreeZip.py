@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, datetime
 import unicodedata
 
@@ -33,7 +33,7 @@ def zfAddNullFile(zf, arcname, date_time, extattr=0):
   arcname = arcname.lstrip(os.sep + (os.altsep or ""))
   zinfo = zipfile.ZipInfo(arcname, date_time)
   zinfo.external_attr = extattr
-  zinfo.compress_type = zf.compression
+  zinfo.compress_type = zipfile.ZIP_STORED
   zinfo.file_size = 0
   zinfo.flag_bits = 0x00
   zinfo.header_offset = zf.fp.tell()    # Start of header bytes
@@ -96,8 +96,10 @@ if __name__ == '__main__':
     #Basic input validation
     # Check if file exists? Warn about overwriting
     target_zip = os.path.abspath(args[0])
+    if not(target_zip.endswith(".zip")):
+      target_zip += ".zip"
     if options.rezip:
-      intermediate_zip = target_zip.replace(".zip","zip.zip")
+      intermediate_zip = target_zip.replace(".zip","zip.zip") # should append zip rather than use zip extension, if no extension provided then?
     else:
       intermediate_zip = target_zip
     for source in args[1:]:
@@ -187,7 +189,8 @@ if __name__ == '__main__':
                 mtime = datetime.datetime.fromisoformat("1980-01-01").timetuple()
                 print("Using default: " + time.strftime("%Y-%m-%d %H:%M:%S", mtime))
               
-            zfAddNullFile(zf, f, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec))
+            #zfAddNullFile(zf, f, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec))
+            zf.writestr(zipfile.ZipInfo(f,date_time=mtime),"")
             filecount += 1
             if (filecount % 1000) == 0:
               sys.stdout.write("\r%d" % filecount)
