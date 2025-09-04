@@ -30,6 +30,9 @@ Param(
     [String]$IdentityFile
 )
 
+# Ensure output is UTF-8 to handle emojis and special characters correctly.
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 # --- Server List Preparation ---
 $serverInfoList = [System.Collections.Generic.List[PSCustomObject]]::new()
 

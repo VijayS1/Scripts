@@ -30,6 +30,9 @@ Param(
     [String]$identity
 )
 
+# Ensure output is UTF-8 to handle emojis and special characters correctly.
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 $publicKeyPath = $identity
 if (-not $publicKeyPath) {
     $sshDir = "$($env:USERPROFILE)\.ssh"
