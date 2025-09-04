@@ -1,91 +1,72 @@
 '
 '	ssh-copy-id.vbs
 '
-' Purpose: Copy public key to remote hosts
+' Purpose: Copy public key to remote hosts using native ssh.exe
 '
 ' .EXAMPLES
-'    .\Scriptname /i:idtest.pub user@example.com /p:password
-'    .\ScriptName user@example.com /p:password
-' 
-' 
-'	Written by VijayS,
-' 
+'    cscript ssh-copy-id.vbs user@example.com [/i:identityfile.pub]
 '
-
+'	Written by VijayS,
+'
 Option Explicit
 
-' Run the Function :)
-Call CheckParameters
+Call Main
 
-Sub CheckParameters()
+Sub Main()
+    Dim fso, shell
+    Set fso = CreateObject("scripting.filesystemobject")
+    Set shell = CreateObject("WScript.Shell")
 
-	Dim fso
-	Set fso = createobject("scripting.filesystemobject")
+    Dim user_host, identityFile, homePath
 
-	Dim user_host
-	Dim identityfile
-	Dim password
+    If WScript.Arguments.Unnamed.Count <> 1 Then
+        WScript.Echo "Usage: cscript " & WScript.ScriptName & " user@hostname.com [/i:identityfile.pub]"
+        WScript.Quit(1)
+    End If
 
-	Dim iNumberOfArguments
-	Dim colNamedArguments
+    user_host = WScript.Arguments.Unnamed.Item(0)
 
-	iNumberOfArguments = WScript.Arguments.Count
-	Set colNamedArguments = WScript.Arguments.Named
-	If iNumberOfArguments = 0 Then
-		WScript.Echo "Error: No connection string provided!" & vbcrlf _
-			& "Usage: Scriptname user@hostname.com [/i:identityfile] [/p:password]" & vbcrlf _
-			& " Identity file defaults to ./id_rsa.pub"
-		WScript.Quit
-	ElseIf iNumberOfArguments >= 1 Then
-		' if 1 argument is provided ASSUME it's destination folder
-		user_host = WScript.Arguments.Unnamed.Item(0)
-	End If
+    If WScript.Arguments.Named.Exists("i") Then
+        identityFile = WScript.Arguments.Named.Item("i")
+    Else
+        homePath = shell.ExpandEnvironmentStrings("%USERPROFILE%")
+        Dim keyFiles(2), keyFile, potentialKey, foundKey
+        keyFiles(0) = "id_ed25519.pub"
+        keyFiles(1) = "id_ecdsa.pub"
+        keyFiles(2) = "id_rsa.pub"
+        foundKey = False
 
-	If Not colNamedArguments.Exists("i") Then
-		identityfile = ".\id_rsa.pub"
-	else
-		identityfile = colNamedArguments.Item("i")
-	End If 
+        For Each keyFile In keyFiles
+            potentialKey = fso.BuildPath(fso.BuildPath(homePath, ".ssh"), keyFile)
+            If fso.FileExists(potentialKey) Then
+                identityFile = potentialKey
+                foundKey = True
+                Exit For
+            End If
+        Next
 
-	If Not colNamedArguments.Exists("p") Then
-		password = ""
-	else
-		password = colNamedArguments.Item("p")
-	End If 
+    End If
 
-	'identityfile = fso.GetAbsolutePathName(".")
-	If Not fso.FileExists(identityfile) Then
-		Wscript.Echo "Error: identity file not found: " & identityfile
-		Wscript.Quit
-	End If
-	Set fso = nothing
+    If Not fso.FileExists(identityFile) Then
+        WScript.Echo "Error: Identity file not found." & vbCrLf & "Looked for: " & identityFile & vbCrLf & "Please generate a key or specify the path using /i:your_key.pub"
+        WScript.Quit(1)
+    End If
 
-	Dim cmdline
-	cmdline = GenCommand(user_host, password, identityfile)
-	'Wscript.Echo cmdline
-	Wscript.Echo getCommandOutput("cmd /c " & cmdline)	
+    WScript.Echo "Using identity file: " & identityFile
+    WScript.Echo "Attempting to copy public key to " & user_host
+    WScript.Echo "You may be prompted for the password."
+
+    Dim command, exitCode
+    command = "cmd /c type """ & identityFile & """ | ssh " & user_host & " ""mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"""
+
+    exitCode = shell.Run(command, 1, True) ' 1 = show window, True = wait for completion
+
+    If exitCode = 0 Then
+        WScript.Echo "Key copied successfully."
+    Else
+        WScript.Echo "Failed to copy key. Exit code: " & exitCode
+    End If
+
+    Set fso = Nothing
+    Set shell = Nothing
 End Sub
-
-Function GenCommand(user_host, password, identityfile)
-	Dim pw
-	Dim cmd
-	If password <> vbNullString Then
-		pw = " -pw " & password
-	End If
-	cmd = "type " & identityfile & " | .\plink.exe " & user_host & pw & _
-	" ""umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys"""
-	GenCommand = cmd
-End Function
-
-'
-' Capture the results of a command line execution and
-' return them to the caller.
-'
-Function getCommandOutput(theCommand)
-    Dim objShell, objCmdExec
-    Set objShell = CreateObject("WScript.Shell")
-    Set objCmdExec = objshell.exec(thecommand)
-    getCommandOutput = objCmdExec.StdOut.ReadAll
-    Set objshell = nothing
-    Set objCmdExec = nothing
-End Function

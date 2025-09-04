@@ -1,28 +1,43 @@
-:: from http://serverfault.com/questions/224810/is-there-an-equivalent-to-ssh-copy-id-for-windows
-::usage: ssh-copy-id test@example.com password [id_ras.pub]
+@echo off
+:: Replicates ssh-copy-id functionality on Windows using native ssh.exe
+:: Usage: ssh-copy-id user@example.com [identity_file]
 
-::@echo off
-IF "%~3"=="" GOTO setdefault
-set /p id=<%3
-GOTO checkparams
-:setdefault
-set /p id=<id_rsa.pub
-:checkparams
-IF "%~1"=="" GOTO promptp
-IF "%~2"=="" GOTO promptp2
+setlocal
 
-:exec
-:: To accept the signature the first time
-echo y | plink.exe %1 -pw %2 "exit"
-:: now to actually copy the key
-echo %id% | plink.exe %1 -pw %2 "umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys"
-GOTO end
+set USER_HOST=%1
+set IDENTITY_FILE=%2
 
-:promptp
-set /p user= "Enter username@remotehost.com: "
-:promptp2
-set /p pw= "Enter password: "
-echo y | plink.exe %user% -pw %pw% "exit"
-echo %id% | plink.exe %user% -pw %pw% "umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys"
-:end
-pause
+if "%USER_HOST%"=="" (
+    echo "Usage: %~n0 user@host [identity_file]"
+    goto :eof
+)
+
+if "%IDENTITY_FILE%"=="" (
+    if exist "%USERPROFILE%\.ssh\id_ed25519.pub" (
+        set "IDENTITY_FILE=%USERPROFILE%\.ssh\id_ed25519.pub"
+    ) else if exist "%USERPROFILE%\.ssh\id_ecdsa.pub" (
+        set "IDENTITY_FILE=%USERPROFILE%\.ssh\id_ecdsa.pub"
+    ) else (
+        set "IDENTITY_FILE=%USERPROFILE%\.ssh\id_rsa.pub"
+    )
+)
+
+if not exist "%IDENTITY_FILE%" (
+    echo "Identity file not found: %IDENTITY_FILE%"
+    echo Please generate a key pair using 'ssh-keygen' or specify the path to your public key.
+    exit /b 1
+)
+
+echo "Using identity file: %IDENTITY_FILE%"
+echo "Attempting to copy public key to %USER_HOST%..."
+echo "You will be prompted for the password."
+
+type "%IDENTITY_FILE%" | ssh %USER_HOST% "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+
+if %errorlevel% neq 0 (
+    echo "Failed to copy key."
+    exit /b %errorlevel%
+)
+
+echo "Key copied successfully."
+endlocal

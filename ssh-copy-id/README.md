@@ -1,33 +1,74 @@
-ssh-copy-id
-=======
+# ssh-copy-id for Windows
 
-Various scripts duplicating ssh-copy-id behavior in windows. All scripts depend on **plink.exe** which you can download from [here](http://the.earth.li/~sgtatham/putty/latest/x86/plink.exe)
+A collection of PowerShell scripts to simplify managing SSH key-based authentication on Windows.
 
-Attempted methods so far:
+## Scripts
 
-- DOS(.cmd) - Success
- - `usage: .\Scriptname test@example.com password [identity file] `
-- VBS (.vbs) - Success
- - `usage: .\Scriptname /i:idtest.pub user@example.com /p:password `
-- Powershell(.ps1) - Success
- - `usage: .\Scriptname -i idtest.pub user@example.com password` 
-- mremoteNG (ext app) - Success
- - Select Host, right click, external tools, select Scriptname 
-- WinSCP script (.bat) - Success
- - `# "WinSCP.com"  /script=".\Scriptname" /parameter "user[:password]@example.com" "id_rsa.pub" [/log=".\copyssh.log]"` 
+### `ssh-check-id.ps1` (Recommended Workflow)
 
-Still to try:
+This script provides a powerful, interactive way to audit and fix SSH key access across multiple servers.
 
-- Batch processing using one of the scripts above. (preferrably powershell). Load hosts.txt & keys.txt and loop over them.
-- GUI application (.net? ahk?)
-- Check Keys mode. If input is substring of keys file. 
+**How it works:**
+1.  It first checks a list of servers to see if key-based authentication is working.
+2.  After checking all servers, it provides a summary report of which ones passed and which failed.
+3.  It then interactively prompts you to choose which of the failed servers you want to copy a key to.
 
+**Usage:**
+
+By default, the script will automatically get the list of servers from your `~/.ssh/config` file.
+
+```powershell
+
+# Check all hosts in ~/.ssh/config and then interactively fix failures
+.\/ssh-copy-id.ps1
+```
+
+You can also provide a list of servers from a file or directly on the command line.
+
+```powershell
+
+# Check servers listed in a file
+.
+/ssh-check-id.ps1 -ServerFile C:\path\to\servers.txt
+
+# Check a specific list of servers
+.
+/ssh-check-id.ps1 -ServerList "server1.com", "user@server2.com"
+
+# Use a specific identity file for checking
+.
+/ssh-check-id.ps1 -IdentityFile C:\Users\user\.ssh\work_key.pub
+```
 
 ---
-Desired Features:
 
-1. ability to enter mulltiple connection strings and passwords
-1.   ability to specify multiple public keys
-1.   checking feature: which shows which servers you have access to with your currently selected private key? or public key? (if public key then need to provide password for remote sites again, or use another known private key?). Remember this? maintain a state? and can periodically refresh?
-1. have a default mode: prompt for key, remotestring and password
-1. check .authorized_keys to see if the key already exists?
+
+### `ssh-copy-id.ps1` (Direct Copy)
+
+This script copies a public SSH key to a single remote host, replicating the basic functionality of the Linux `ssh-copy-id` command. It will prompt for a password if required.
+
+If no identity file is specified, it automatically searches for and uses the first key found in the following order: `id_ed25519.pub`, `id_ecdsa.pub`, then `id_rsa.pub`.
+
+```powershell
+
+# Automatically find and copy the best available public key
+.
+/ssh-copy-id.ps1 -user_at_hostname user@example.com
+
+# Copy a specific public key
+.
+/ssh-copy-id.ps1 -user_at_hostname user@example.com -identity C:\Users\YourUser\.ssh\my_key.pub
+```
+
+---
+
+
+### Legacy & Specialized Scripts
+
+These scripts are maintained for compatibility or specific use cases.
+
+*   **`ssh-copy-id.cmd`**: A Command Prompt version that copies a key to a single host.
+*   **`ssh-copy-id.vbs`**: A VBScript version for legacy environments.
+*   **`ssh-copy-id.bat`**: A specialized script designed to be called *by WinSCP only*. It is not a standalone script.
+
+```
