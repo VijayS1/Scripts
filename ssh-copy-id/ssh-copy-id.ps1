@@ -5,8 +5,8 @@
     Safely copies a public SSH key to a remote host, checking for existing keys first.
  .DESCRIPTION
     This script replicates the functionality of the Linux `ssh-copy-id` utility on Windows.
-    It first checks if the key already exists on the remote server and will not add a duplicate.
-    If the copy operation fails, it attempts to diagnose common server-side permission issues.
+    It uses a single SSH connection to remotely check if the key already exists and only adds it if it's missing. This prevents duplicate keys and avoids multiple password prompts.
+    If the operation fails, it attempts to diagnose common server-side permission issues.
  .PARAMETER user_at_hostname
     The user and hostname to connect to (e.g., user@example.com).
  .PARAMETER identity
@@ -54,34 +54,51 @@ if (-not ($publicKeyPath -and (Test-Path $publicKeyPath))) {
 $publicKeyString = (Get-Content -Path $publicKeyPath -Raw).Trim()
 
 try {
-    # Step 1: Check if the key already exists to prevent duplicates.
-    # grep -F treats the key as a fixed string. -q runs quietly.
-    $checkCommand = "grep -F -q -- '${publicKeyString}' ~/.ssh/authorized_keys"
-    Write-Verbose "Checking if key exists on $user_at_hostname"
-    Write-Verbose "Check command: $checkCommand"
-    
-    ssh $user_at_hostname $checkCommand 2>$null
+    # This entire script block is executed on the remote server in a single session.
+    # This prevents multiple password prompts.
+    $remoteScript = @"
+# This entire script block is executed on the remote server in a single session.
+# This prevents multiple password prompts.
+KEY='${publicKeyString}'
+AUTH_FILE="~/.ssh/authorized_keys"
+SSH_DIR=`$(dirname "`$AUTH_FILE`")`
 
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Key already exists on $user_at_hostname. No changes made."
-        exit 0
-    } elseif ($LASTEXITCODE -ne 1) {
-        # grep returns 0 if found, 1 if not found. Any other code is an error.
-        throw "Check command failed with exit code $LASTEXITCODE. This might be a permission issue on the remote directory."
-    }
+# Ensure the .ssh directory exists and has the correct permissions.
+if [ ! -d "`$SSH_DIR`" ]; then
+  mkdir -p "`$SSH_DIR`"
+  chmod 700 "`$SSH_DIR`"
+fi
 
-    # Step 2: If key doesn't exist (grep returned 1), proceed to add it.
-    Write-Verbose "Key not found. Proceeding to add it."
-    $remoteAddCommand = "umask 077; mkdir -p .ssh; echo '${publicKeyString}' >> .ssh/authorized_keys; chmod 600 .ssh/authorized_keys"
-    Write-Verbose "Add command: $remoteAddCommand"
+# Ensure the authorized_keys file exists and has the correct permissions.
+if [ ! -f "`$AUTH_FILE`" ]; then
+  touch "`$AUTH_FILE`"
+  chmod 600 "`$AUTH_FILE`"
+fi
 
-    ssh $user_at_hostname $remoteAddCommand | Out-Host
+# Check if the key already exists.
+if grep -F -q -- "`$KEY`" "`$AUTH_FILE`"; then
+  echo "✅ Key already exists on server. No changes made."
+  exit 0
+else
+  # Key does not exist, so append it.
+  echo "`$KEY`" >> "`$AUTH_FILE`"
+  if [ `$?` -eq 0 ]; then
+    echo "✅ Key successfully added to server."
+    exit 0
+  else
+    echo "❌ Failed to add key to file." >&2
+    exit 1
+  fi
+fi
+"@
+
+    Write-Verbose "Executing remote script on $user_at_hostname"
+    # The remote script is piped to Out-Host to ensure its output is displayed smoothly.
+    ssh $user_at_hostname $remoteScript | Out-Host
 
     if ($LASTEXITCODE -ne 0) {
-        throw "The ssh command to add the key failed with exit code $LASTEXITCODE."
+        throw "The remote script failed with exit code $LASTEXITCODE."
     }
-
-    Write-Host "✅ Public key copied successfully to $user_at_hostname"
 }
 catch {
     # --- Start Diagnostic Phase ---
