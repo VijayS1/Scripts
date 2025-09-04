@@ -1,9 +1,31 @@
 #!/usr/bin/python3
 import os, sys, zipfile, optparse, zlib, fnmatch, time, tempfile, datetime
 import unicodedata
+'''
+Add proper docstring here
 
+TODO: assume sensible defaults if parameters not provided
+i.e. assume current directory for zipping and for extraction
+assume archive.zip as name or (dir).zip as name if no archive name provided
+TODO: show progressbar while extracting, read comment about number of files, and calculate based on files extracted, if possible
+    Add time taken to extract as well
+TODO: refactor code into proper functions, rather than procedural code, especially the main body
+TODO: fix usage to be accurate
+TODO: use the unicode functions to skip files? 
+
+'''
 SUFFIXES = {1000: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']}
+
+# Restores the timestamps of zipfile contents.
+def RestoreTimestampsOfZipContents(zinfolist, extract_dir):
+    for f in zinfolist:
+        # path to this extracted f-item
+        fullpath = os.path.join(extract_dir, f.filename)
+        # still need to adjust the dt o/w item will have the current dt
+        date_time = time.mktime(f.date_time + (0, 0, -1))
+        # update dt
+        os.utime(fullpath, (date_time, date_time))
 
 def humanReadableByteCount(size, a_kilobyte_is_1024_bytes=True):
     '''Convert a file size to human-readable form.
@@ -126,8 +148,12 @@ if __name__ == '__main__':
         zf.extract(info)
         zf2=zipfile.ZipFile(info.filename,"r")
         zf2.extractall(source_dir)
+        RestoreTimestampsOfZipContents(zf2.infolist,source_dir) #TO TEST
         zf2.close()
         os.remove(info.filename)
+      else:
+        zf.extractall(source_dir)
+        RestoreTimestampsOfZipContents(zf.infolist,source_dir) #TO TEST
     zf.close()
 
     print("Files extracted successfuly to %s" % (source_dir))
@@ -190,7 +216,8 @@ if __name__ == '__main__':
                 print("Using default: " + time.strftime("%Y-%m-%d %H:%M:%S", mtime))
               
             #zfAddNullFile(zf, f, (mtime.tm_year, mtime.tm_mon, mtime.tm_mday, mtime.tm_hour, mtime.tm_min, mtime.tm_sec))
-            zf.writestr(zipfile.ZipInfo(f,date_time=mtime),"")
+            zf.writestr(zipfile.ZipInfo(f,date_time=mtime),"") #this doubles the size of the zipfile, i assume it's because of the duplicate local header.
+            # have to find a better way
             filecount += 1
             if (filecount % 1000) == 0:
               sys.stdout.write("\r%d" % filecount)
